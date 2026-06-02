@@ -54,3 +54,96 @@ techcity-drones/
 ├── main.js
 ├── techcity.js
 └── README.md
+
+---
+
+## 📊 Diagrama de Classes (Mermaid)
+
+Este diagrama representa fielmente a arquitetura implementada no código, evidenciando o encapsulamento estrito (`-` para elementos privados) e os métodos centralizados no Controlador:
+
+```mermaid
+classDiagram
+    class TechCityController {
+        -usuarios: Array
+        -drones: Array
+        -pedidos: Array
+        -entregas: Array
+        -operacoes: Array
+        +cadastrarUsuario(id, nome)
+        +ativarUsuario(id)
+        +desativarUsuario(id)
+        +cadastrarDrone(id, capacidadeCarga)
+        +registrarPedido(descricao, destino, peso) Pedido
+        +iniciarEntrega(idDrone, idPedido, idOperador) Entrega
+        +concluirEntrega(idEntrega, idOperador)
+        +cancelarEntrega(idEntrega, idOperador)
+        -gerarId(prefixo) String
+        -registrarLog(descricao, usuario)
+        -buscarUsuario(id) Usuario
+        -validarOperador(idOperador) Usuario
+    }
+
+    class Usuario {
+        -id: String
+        -nome: String
+        -ativo: Boolean
+        +getId() String
+        +getNome() String
+        +isAtivo() Boolean
+        +ativar()
+        +desativar()
+    }
+
+    class Operacao {
+        -descricao: String
+        -dataHora: Date
+        -usuario: Usuario
+        +getDescricao() String
+        +getUsuario() Usuario
+        +getDataHora() String
+    }
+
+    class Drone {
+        -id: String
+        -capacidadeCarga: Number
+        -status: String
+        +getId() String
+        +getCapacidadeCarga() Number
+        +getStatus() String
+        +setStatus(novoStatus)
+    }
+
+    class Pedido {
+        -id: String
+        -descricao: String
+        -destino: String
+        -peso: Number
+        -status: String
+        +getId() String
+        +getDescricao() String
+        +getDestino() String
+        +getPeso() Number
+        +getStatus() String
+        +setStatus(novoStatus)
+    }
+
+    class Entrega {
+        -id: String
+        -drone: Drone
+        -pedido: Pedido
+        -status: String
+        +getId() String
+        +getDrone() Drone
+        +getPedido() Pedido
+        +getStatus() String
+        +setStatus(novoStatus)
+    }
+
+    TechCityController "1" o-- "*" Usuario : agrega
+    TechCityController "1" o-- "*" Drone : agrega
+    TechCityController "1" o-- "*" Pedido : agrega
+    TechCityController "1" o-- "*" Entrega : agrega
+    TechCityController "1" o-- "*" Operacao : agrega
+    Operacao "1" --> "1" Usuario : associa
+    Entrega "1" --> "1" Drone : associa
+    Entrega "1" --> "1" Pedido : associa
