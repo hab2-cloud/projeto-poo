@@ -41,7 +41,7 @@ Em conformidade com as diretrizes pedagógicas da disciplina, o projeto foi cons
 
 O projeto conta com a estrutura modularizada por pastas e também com uma versão consolidada em arquivo único na raiz:
 
-~~~text
+```text
 techcity-drones/
 ├── classes/
 │   ├── Usuario.js
@@ -54,7 +54,7 @@ techcity-drones/
 ├── main.js          <-- Ponto de entrada (Modo Modular)
 ├── techcity.js      <-- Ponto de entrada (Modo Arquivo Único)
 └── README.md
-~~~
+```
 
 ---
 
@@ -80,9 +80,9 @@ techcity-drones/
 
 ## 📊 Diagrama de Classes (Mermaid)
 
-Este diagrama representa fielmente a arquitetura implementada no código, evidenciando o encapsulamento estrito (`-` para elementos privados) e os métodos centralizados no Controlador:
+Este diagrama representa fielmente a arquitetura implementada no código, evidenciando o encapsulamento estrito (`-` para elementos privados) e as tipagens corretas no formato UML aceito pelo GitHub:
 
-~~~mermaid
+```mermaid
 classDiagram
     class TechCityController {
         -usuarios: Array
@@ -94,23 +94,23 @@ classDiagram
         +ativarUsuario(id)
         +desativarUsuario(id)
         +cadastrarDrone(id, capacidadeCarga)
-        +registrarPedido(descricao, destino, peso) Pedido
-        +iniciarEntrega(idDrone, idPedido, idOperador) Entrega
+        +registrarPedido(descricao, destino, peso) : Pedido
+        +iniciarEntrega(idDrone, idPedido, idOperador) : Entrega
         +concluirEntrega(idEntrega, idOperador)
         +cancelarEntrega(idEntrega, idOperador)
-        -gerarId(prefixo) String
+        -gerarId(prefixo) : String
         -registrarLog(descricao, usuario)
-        -buscarUsuario(id) Usuario
-        -validarOperador(idOperador) Usuario
+        -buscarUsuario(id) : Usuario
+        -validarOperador(idOperador) : Usuario
     }
 
     class Usuario {
         -id: String
         -nome: String
         -ativo: Boolean
-        +getId() String
-        +getNome() String
-        +isAtivo() Boolean
+        +getId() : String
+        +getNome() : String
+        +isAtivo() : Boolean
         +ativar()
         +desativar()
     }
@@ -119,18 +119,18 @@ classDiagram
         -descricao: String
         -dataHora: Date
         -usuario: Usuario
-        +getDescricao() String
-        +getUsuario() Usuario
-        +getDataHora() String
+        +getDescricao() : String
+        +getUsuario() : Usuario
+        +getDataHora() : String
     }
 
     class Drone {
         -id: String
         -capacidadeCarga: Number
         -status: String
-        +getId() String
-        +getCapacidadeCarga() Number
-        +getStatus() String
+        +getId() : String
+        +getCapacidadeCarga() : Number
+        +getStatus() : String
         +setStatus(novoStatus)
     }
 
@@ -140,11 +140,11 @@ classDiagram
         -destino: String
         -peso: Number
         -status: String
-        +getId() String
-        +getDescricao() String
-        +getDestino() String
-        +getPeso() Number
-        +getStatus() String
+        +getId() : String
+        +getDescricao() : String
+        +getDestino() : String
+        +getPeso() : Number
+        +getStatus() : String
         +setStatus(novoStatus)
     }
 
@@ -153,10 +153,10 @@ classDiagram
         -drone: Drone
         -pedido: Pedido
         -status: String
-        +getId() String
-        +getDrone() Drone
-        +getPedido() Pedido
-        +getStatus() String
+        +getId() : String
+        +getDrone() : Drone
+        +getPedido() : Pedido
+        +getStatus() : String
         +setStatus(novoStatus)
     }
 
@@ -168,7 +168,7 @@ classDiagram
     Operacao "1" --> "1" Usuario : associa
     Entrega "1" --> "1" Drone : associa
     Entrega "1" --> "1" Pedido : associa
-~~~
+```
 
 ---
 
@@ -185,3 +185,15 @@ Abra o terminal ou prompt de comando na pasta raiz do projeto e escolha uma das 
 * **Opção A (Estrutura Modular):** Para executar o fluxo a partir da arquitetura dividida em pastas:
   ```bash
   node main.js
+  ```
+
+* **Opção B (Arquivo Único Consolidado):** Para executar o fluxo concentrado em um único script na raiz:
+  ```bash
+  node techcity.js
+  ```
+
+### Cenários validados no console durante a execução:
+* **Fluxo de Sucesso:** Registro de operadores, cadastro de frota e fluxo logístico completo (Pendente ➔ Em Rota ➔ Entregue).
+* **Bloqueio por Inatividade (RF02):** Tentativa de operação negada quando um operador é intencionalmente suspenso/desativado do sistema.
+* **Alerta de Sobrecarga (RF09):** Bloqueio imediato ao tentar alocar um pedido pesado em um drone com capacidade limite menor.
+* **Resiliência no Cancelamento (RF10):** Abortagem de missão em voo com reversão automática do pedido e recolocação instantânea do drone para prontidão.
