@@ -9,6 +9,21 @@
 
 ---
 
+## 👥 Equipa e Divisão de Responsabilidades
+
+Para a conceção, modelagem e implementação desta primeira etapa do projeto, a equipa organizou-se com papéis focados e integrados, distribuídos da seguinte forma:
+
+* **FABIO JOSE DOS SANTOS FILHO** ([fjsf1@aluno.ifal.edu.br](mailto:fjsf1@aluno.ifal.edu.br))
+  * **Responsabilidade:** Desenvolvimento do Código-Fonte. Ficou encarregue de traduzir a modelagem lógica para a sintaxe do JavaScript, aplicando as classes, o controlador centralizado (`TechCityController`), o encapsulamento estrito com propriedades privadas (`#`) e os cenários de simulação de testes executáveis no terminal.
+  
+* **GUILHERME WILLIAM DOS SANTOS SILVA** ([gwss2@aluno.ifal.edu.br](mailto:gwss2@aluno.ifal.edu.br))
+  * **Responsabilidade:** Modelagem Arquitetural e Diagrama de Classes. Ficou encarregue do desenho estrutural e conceitual da aplicação, mapeando os atributos, visibilidades, métodos e os relacionamentos corretos (associações e agregações) através do formato visual UML/Mermaid.
+
+* **HIAGO ALVES BARBOZA** ([hab2@aluno.ifal.edu.br](mailto:hab2@aluno.ifal.edu.br))
+  * **Responsabilidade:** Documentação Geral, Escrita Técnica e Integração. Ficou encarregue de conceber o Documento de Modelagem de Software detalhado, redigir as justificações técnicas, alinhar os requisitos obrigatórios e adicionais com a arquitetura, além de estruturar o guia do projeto (`README.md`) e gerir a publicação e versionamento no repositório GitHub.
+
+---
+
 ## 📝 Descrição do Projeto
 O **TechCity Control** é uma plataforma unificada desenvolvida para otimizar e auditar as operações urbanas da cidade inteligente de TechCity. Este repositório contém o **Módulo 2**, responsável pela **automação da malha logística de entregas aéreas utilizando Drones**.
 
@@ -37,5 +52,4 @@ techcity-drones/
 ├── controllers/
 │   └── TechCityController.js
 ├── main.js
-├── techcity.js
 └── README.md
