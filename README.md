@@ -4,6 +4,7 @@
 * **Instituição:** Instituto Federal de Alagoas (IFAL) - Campus Maceió
 * **Curso:** Técnico em Desenvolvimento de Sistemas (TDS)
 * **Disciplina:** Programação Orientada a Objetos (POO)
+* **Professor Orientador:** Prof. MSc. Ricardo Nunes ([ricardo@ifal.edu.br](mailto:ricardo@ifal.edu.br))
 * **Projeto:** 2º Bimestre - Entrega 1 (Modelagem, Arquitetura e Código Inicial)
 
 ---
