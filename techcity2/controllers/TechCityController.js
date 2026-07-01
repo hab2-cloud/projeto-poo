@@ -1,333 +1,112 @@
-// ============================================================
-// Classe: TechCityController
-// Responsabilidade (RF04):
-//   É o "cérebro" do sistema — a única porta de entrada para
-//   todas as operações. Nenhuma classe externa acessa diretamente
-//   os dados das entidades; tudo passa por aqui.
-//
-//   Ele é responsável por:
-//     - guardar as listas de todos os objetos em memória
-//     - validar as regras antes de executar qualquer ação
-//     - coordenar as mudanças de estado entre objetos
-//     - registrar logs de auditoria de cada operação relevante
-//
-//   Esse padrão de design se chama "Controller" ou "Fachada":
-//   simplifica o uso do sistema para quem está de fora.
-// ============================================================
-
-const Usuario  = require("../classes/Usuario");
-const Operacao = require("../classes/Operacao");
-const Drone    = require("../classes/Drone");
-const Pedido   = require("../classes/Pedido");
-const Entrega  = require("../classes/Entrega");
+const GerenciadorUsuarios = require('./GerenciadorUsuarios');
+const GerenciadorDrones   = require('./GerenciadorDrones');
+const GerenciadorPedidos  = require('./GerenciadorPedidos');
+const GerenciadorEntregas = require('./GerenciadorEntregas');
+const ServicoLog          = require('./ServicoLog');
 
 class TechCityController {
+  #gerenciadorUsuarios; 
+  #gerenciadorDrones; 
+  #gerenciadorPedidos; 
+  #gerenciadorEntregas; 
+  #servicoLog;
 
-  // Todas as listas são privadas — ninguém de fora acessa diretamente
-  #usuarios  = [];
-  #drones    = [];
-  #pedidos   = [];
-  #entregas  = [];
-  #operacoes = []; // histórico de auditoria (RF03)
-
-  // ------------------------------------------------------------------
-  // MÉTODO INTERNO: gera um ID único com prefixo + timestamp + random
-  // Exemplo de resultado: "PED-1717200000000-432"
-  // ------------------------------------------------------------------
-  #gerarId(prefixo) {
-    const numero = Math.floor(Math.random() * 1000);
-    return `${prefixo}-${Date.now()}-${numero}`;
+  constructor() {
+    this.#gerenciadorUsuarios = new GerenciadorUsuarios();
+    this.#gerenciadorDrones   = new GerenciadorDrones();
+    this.#gerenciadorPedidos  = new GerenciadorPedidos();
+    this.#gerenciadorEntregas = new GerenciadorEntregas();
+    this.#servicoLog          = new ServicoLog();
   }
 
-  // ------------------------------------------------------------------
-  // MÉTODO INTERNO: cria e salva um log de auditoria (RF03)
-  // Chamado sempre que uma operação importante ocorre
-  // ------------------------------------------------------------------
-  #registrarLog(descricao, usuario) {
-    const log = new Operacao(descricao, usuario);
-    this.#operacoes.push(log);
-  }
+  cadastrarUsuario(id, nome) { return this.#gerenciadorUsuarios.cadastrarUsuario(id, nome); }
+  desativarUsuario(id)       { this.#gerenciadorUsuarios.desativarUsuario(id); }
+  cadastrarDrone(id, cap)    { return this.#gerenciadorDrones.cadastrarDrone(id, cap); }
+  registrarPedido(d, dest, p){ return this.#gerenciadorPedidos.registrarPedido(d, dest, p); }
+  listarDrones()             { console.log("\n  === FROTA DE DRONES ==="); this.#gerenciadorDrones.listarTodos(); }
+  listarLogs()               { console.log("\n  === LOG DE AUDITORIA ==="); this.#servicoLog.exibirLogs(); }
 
-  // ------------------------------------------------------------------
-  // MÉTODO INTERNO: busca um usuário pelo ID
-  // Retorna o objeto ou null se não existir
-  // ------------------------------------------------------------------
-  #buscarUsuario(id) {
-    const usuario = this.#usuarios.find(u => u.getId() === id);
-    if (!usuario) {
-      console.log(`  ERRO: Usuário com ID "${id}" não encontrado.`);
-      return null;
-    }
-    return usuario;
-  }
+  #gerarId(prefixo) { return `${prefixo}-${Date.now().toString().slice(-4)}-${Math.floor(Math.random() * 1000)}`; }
 
-  // ------------------------------------------------------------------
-  // MÉTODO INTERNO: valida se o operador existe E está ativo
-  // Usado antes de qualquer operação que exige autorização humana
-  // ------------------------------------------------------------------
-  #validarOperador(idOperador) {
-    const operador = this.#buscarUsuario(idOperador);
-    if (!operador) return null;
-
-    if (!operador.isAtivo()) {
-      console.log(`  ERRO: O operador "${operador.getNome()}" está inativo e não pode autorizar operações.`);
-      return null;
-    }
-
-    return operador;
-  }
-
-
-  // ==================================================================
-  // RF01 — CADASTRO DE USUÁRIOS
-  // Registra um novo operador no sistema.
-  // Impede duplicidade de ID.
-  // ==================================================================
-  cadastrarUsuario(id, nome) {
-    const jaExiste = this.#usuarios.find(u => u.getId() === id);
-    if (jaExiste) {
-      console.log(`  ERRO: Já existe um operador com o ID "${id}".`);
-      return null;
-    }
-
-    const usuario = new Usuario(id, nome);
-    this.#usuarios.push(usuario);
-    console.log(`  ✔ Operador cadastrado: ${usuario}`);
-    return usuario;
-  }
-
-  // ==================================================================
-  // RF02 — CONTROLE DE USUÁRIOS ATIVOS
-  // Ativa ou desativa um operador pelo ID.
-  // ==================================================================
-  ativarUsuario(id) {
-    const usuario = this.#buscarUsuario(id);
-    if (!usuario) return;
-
-    usuario.ativar();
-    console.log(`  ✔ Operador "${usuario.getNome()}" foi ativado.`);
-  }
-
-  desativarUsuario(id) {
-    const usuario = this.#buscarUsuario(id);
-    if (!usuario) return;
-
-    usuario.desativar();
-    console.log(`  ✔ Operador "${usuario.getNome()}" foi desativado.`);
-  }
-
-
-  // ==================================================================
-  // RF05 (M2-RF01) — CADASTRO DE DRONES
-  // Adiciona um novo drone à frota da cidade.
-  // O drone começa automaticamente como "Disponível".
-  // ==================================================================
-  cadastrarDrone(id, capacidadeCarga) {
-    const drone = new Drone(id, capacidadeCarga);
-    this.#drones.push(drone);
-    console.log(`  ✔ Drone cadastrado: ${drone}`);
-    return drone;
-  }
-
-
-  // ==================================================================
-  // RF06 (M2-RF02) — REGISTRO DE PEDIDOS
-  // Cria um novo pedido de entrega.
-  // O ID é gerado automaticamente pelo sistema.
-  // O pedido começa com status "Pendente".
-  // ==================================================================
-  registrarPedido(descricao, destino, peso) {
-    const id     = this.#gerarId("PED");
-    const pedido = new Pedido(id, descricao, destino, peso);
-    this.#pedidos.push(pedido);
-    console.log(`  ✔ Pedido registrado: ${pedido}`);
-    return pedido;
-  }
-
-
-  // ==================================================================
-  // RF07 (M2-RF03) — INICIAR ENTREGA
-  // Liga um drone disponível a um pedido pendente.
-  // Valida: operador ativo, drone disponível, pedido pendente,
-  //         e se o peso não ultrapassa a capacidade do drone (RF09).
-  // Cria o objeto Entrega e atualiza os status de drone e pedido.
-  // ==================================================================
   iniciarEntrega(idDrone, idPedido, idOperador) {
+    try {
+      const operador = this.#gerenciadorUsuarios.validarOperador(idOperador);
+      const drone    = this.#gerenciadorDrones.buscarDrone(idDrone);
+      const pedido   = this.#gerenciadorPedidos.buscarPedido(idPedido);
 
-    // 1. Verificar se o operador existe e está ativo
-    const operador = this.#validarOperador(idOperador);
-    if (!operador) return null;
+      if (!drone || !pedido) return console.log("  ❌ Erro: Drone ou Pedido não encontrado.");
+      if (drone.getStatus() === "Manutenção") return console.log(`  ❌ Erro: Drone ${idDrone} está em Manutenção.`);
+      if (drone.getStatus() !== "Disponível") return console.log(`  ❌ Erro: Drone ${idDrone} não está disponível.`);
+      if (pedido.getStatus() !== "Pendente") return console.log("  ❌ Erro: Pedido não está pendente.");
+      if (pedido.getPeso() > drone.getCapacidadeCarga()) return console.log("  ❌ Erro: Carga excede o limite do drone.");
+      if (drone.getBateria() < 25) return console.log(`  ❌ Erro: Bateria fraca (${drone.getBateria()}%). Necessária recarga.`);
 
-    // 2. Verificar se o drone existe
-    const drone = this.#drones.find(d => d.getId() === idDrone);
-    if (!drone) {
-      console.log(`  ERRO: Drone "${idDrone}" não encontrado.`);
-      return null;
-    }
+      drone.setStatus("Em Operação");
+      drone.consumirBateria(25);
+      pedido.setStatus("Em Rota");
 
-    // 3. Verificar se o drone está disponível
-    if (drone.getStatus() !== "Disponível") {
-      console.log(`  ERRO: Drone "${idDrone}" não está disponível (status atual: ${drone.getStatus()}).`);
-      return null;
-    }
+      const idEntrega = this.#gerarId("ENT");
+      const entrega = this.#gerenciadorEntregas.criarEntrega(idEntrega, drone, pedido);
 
-    // 4. Verificar se o pedido existe
-    const pedido = this.#pedidos.find(p => p.getId() === idPedido);
-    if (!pedido) {
-      console.log(`  ERRO: Pedido "${idPedido}" não encontrado.`);
-      return null;
-    }
-
-    // 5. Verificar se o pedido ainda está pendente
-    if (pedido.getStatus() !== "Pendente") {
-      console.log(`  ERRO: Pedido "${idPedido}" não está pendente (status atual: ${pedido.getStatus()}).`);
-      return null;
-    }
-
-    // 6. RF09 — Validação de sobrecarga
-    // Se o peso do pedido for maior que a capacidade do drone, bloqueia
-    if (pedido.getPeso() > drone.getCapacidadeCarga()) {
-      console.log(
-        `  ERRO: Sobrecarga detectada! O pedido pesa ${pedido.getPeso()}kg, ` +
-        `mas o drone ${idDrone} suporta no máximo ${drone.getCapacidadeCarga()}kg.`
-      );
-      return null;
-    }
-
-    // 7. Tudo validado — atualizar os estados e criar a Entrega
-    drone.setStatus("Em Operação");
-    pedido.setStatus("Em Rota");
-
-    const idEntrega = this.#gerarId("ENT");
-    const entrega   = new Entrega(idEntrega, drone, pedido);
-    this.#entregas.push(entrega);
-
-    // 8. Registrar log de auditoria
-    this.#registrarLog(
-      `Entrega ${idEntrega} iniciada por ${operador.getNome()} — ` +
-      `Drone: ${idDrone}, Pedido: ${idPedido}, Destino: ${pedido.getDestino()}`,
-      operador
-    );
-
-    console.log(`  ✔ Entrega iniciada com sucesso: ${entrega}`);
-    return entrega;
+      this.#servicoLog.registrarLog(`Iniciou entrega ${idEntrega} no Drone ${idDrone}`, operador);
+      console.log(`  ✔ Entrega ${idEntrega} iniciada com sucesso.`);
+      return entrega;
+    } catch (err) { console.log(`  ❌ ${err.message}`); }
   }
 
-
-  // ==================================================================
-  // RF08 (M2-RF04) — CONCLUIR ENTREGA
-  // Marca a entrega como concluída, o pedido como entregue
-  // e devolve o drone para "Disponível" (ele volta à frota).
-  // Exige operador ativo para autorizar.
-  // ==================================================================
   concluirEntrega(idEntrega, idOperador) {
-
-    const operador = this.#validarOperador(idOperador);
-    if (!operador) return;
-
-    const entrega = this.#entregas.find(e => e.getId() === idEntrega);
-    if (!entrega) {
-      console.log(`  ERRO: Entrega "${idEntrega}" não encontrada.`);
-      return;
-    }
-
-    if (entrega.getStatus() !== "Iniciada") {
-      console.log(`  ERRO: Esta entrega não está ativa (status atual: ${entrega.getStatus()}).`);
-      return;
-    }
-
-    // Atualiza os três objetos envolvidos
-    entrega.setStatus("Concluída");
-    entrega.getPedido().setStatus("Entregue");
-    entrega.getDrone().setStatus("Disponível"); // drone volta para a frota
-
-    this.#registrarLog(
-      `Entrega ${idEntrega} concluída por ${operador.getNome()} — ` +
-      `Drone ${entrega.getDrone().getId()} retornou à frota`,
-      operador
-    );
-
-    console.log(`  ✔ Entrega concluída: ${entrega}`);
+    try {
+      const operador = this.#gerenciadorUsuarios.validarOperador(idOperador);
+      const entrega  = this.#gerenciadorEntregas.buscarEntrega(idEntrega);
+      if (!entrega) return;
+      entrega.getDrone().setStatus("Disponível");
+      entrega.getPedido().setStatus("Entregue");
+      this.#servicoLog.registrarLog(`Concluiu entrega ${idEntrega}`, operador);
+      console.log(`  ✔ Entrega ${idEntrega} concluída.`);
+    } catch (err) { console.log(`  ❌ ${err.message}`); }
   }
 
-
-  // ==================================================================
-  // RF10 (Adicional) — CANCELAR ENTREGA
-  // Aborta uma entrega que já está em andamento.
-  // O drone é liberado de volta para "Disponível".
-  // O pedido vai para "Cancelado".
-  // Exige operador ativo para autorizar.
-  // ==================================================================
   cancelarEntrega(idEntrega, idOperador) {
-
-    const operador = this.#validarOperador(idOperador);
-    if (!operador) return;
-
-    const entrega = this.#entregas.find(e => e.getId() === idEntrega);
-    if (!entrega) {
-      console.log(`  ERRO: Entrega "${idEntrega}" não encontrada.`);
-      return;
-    }
-
-    if (entrega.getStatus() !== "Iniciada") {
-      console.log(`  ERRO: Só é possível cancelar entregas ativas (status atual: ${entrega.getStatus()}).`);
-      return;
-    }
-
-    // Atualiza os três objetos envolvidos
-    entrega.setStatus("Cancelada");
-    entrega.getPedido().setStatus("Cancelado");
-    entrega.getDrone().setStatus("Disponível"); // drone liberado imediatamente
-
-    this.#registrarLog(
-      `Entrega ${idEntrega} cancelada por ${operador.getNome()} — ` +
-      `Drone ${entrega.getDrone().getId()} liberado de volta à frota`,
-      operador
-    );
-
-    console.log(`  ✔ Entrega cancelada: ${entrega}`);
+    try {
+      const operador = this.#gerenciadorUsuarios.validarOperador(idOperador);
+      const entrega  = this.#gerenciadorEntregas.buscarEntrega(idEntrega);
+      if (!entrega) return;
+      entrega.getDrone().setStatus("Disponível");
+      entrega.getPedido().setStatus("Cancelado");
+      this.#servicoLog.registrarLog(`Cancelou entrega ${idEntrega}`, operador);
+      console.log(`  ✔ Entrega ${idEntrega} cancelada.`);
+    } catch (err) { console.log(`  ❌ ${err.message}`); }
   }
 
-
-  // ==================================================================
-  // MÉTODOS DE CONSULTA — listagens para visualização do estado atual
-  // ==================================================================
-
-  listarDrones() {
-    console.log("\n  === FROTA DE DRONES ===");
-    if (this.#drones.length === 0) {
-      console.log("  Nenhum drone cadastrado.");
-      return;
-    }
-    this.#drones.forEach(d => console.log("   •", d.toString()));
+  enviarDroneParaManutencao(idDrone, idOperador) {
+    try {
+      const op = this.#gerenciadorUsuarios.validarOperador(idOperador);
+      const d = this.#gerenciadorDrones.buscarDrone(idDrone);
+      if (d.getStatus() === "Em Operação") return console.log("  ❌ Erro: Drone em voo.");
+      d.setStatus("Manutenção");
+      this.#servicoLog.registrarLog(`Enviou drone ${idDrone} para manutenção`, op);
+      console.log(`  ✔ Drone ${idDrone} em Manutenção.`);
+    } catch (err) { console.log(`  ❌ ${err.message}`); }
   }
 
-  listarPedidos() {
-    console.log("\n  === PEDIDOS ===");
-    if (this.#pedidos.length === 0) {
-      console.log("  Nenhum pedido registrado.");
-      return;
-    }
-    this.#pedidos.forEach(p => console.log("   •", p.toString()));
+  retirarDroneDaManutencao(idDrone, idOperador) {
+    try {
+      const op = this.#gerenciadorUsuarios.validarOperador(idOperador);
+      const d = this.#gerenciadorDrones.buscarDrone(idDrone);
+      d.setStatus("Disponível");
+      this.#servicoLog.registrarLog(`Liberou drone ${idDrone} da manutenção`, op);
+      console.log(`  ✔ Drone ${idDrone} Disponível.`);
+    } catch (err) { console.log(`  ❌ ${err.message}`); }
   }
 
-  listarEntregas() {
-    console.log("\n  === ENTREGAS ===");
-    if (this.#entregas.length === 0) {
-      console.log("  Nenhuma entrega registrada.");
-      return;
-    }
-    this.#entregas.forEach(e => console.log("   •", e.toString()));
-  }
-
-  listarLogs() {
-    console.log("\n  === LOG DE AUDITORIA ===");
-    if (this.#operacoes.length === 0) {
-      console.log("  Nenhuma operação registrada.");
-      return;
-    }
-    this.#operacoes.forEach(op => console.log("   •", op.toString()));
+  recarregarDrone(idDrone, idOperador) {
+    try {
+      const op = this.#gerenciadorUsuarios.validarOperador(idOperador);
+      const d = this.#gerenciadorDrones.buscarDrone(idDrone);
+      d.recarregar();
+      this.#servicoLog.registrarLog(`Recarregou drone ${idDrone}`, op);
+      console.log(`  ✔ Drone ${idDrone} recarregado (100%).`);
+    } catch (err) { console.log(`  ❌ ${err.message}`); }
   }
 }
-
 module.exports = TechCityController;
